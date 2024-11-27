@@ -236,7 +236,7 @@ class RNN_LowRank(nn.Module):
     """
     Low rank arquitechture as used in Beiran et al., 2023.
     """
-    def __init__(self, n_inputs, hidden_size, rank, n_outputs, alpha, diag):
+    def __init__(self, n_inputs, hidden_size, n_outputs, alpha, diag, rank):
         super(RNN_LowRank, self).__init__()
         self.device = "cpu"
         self.hidden_size = hidden_size

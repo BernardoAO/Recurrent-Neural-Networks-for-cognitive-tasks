@@ -42,20 +42,20 @@ def check_produced(scores, T5s, b, ti):
     
     return no_early_response and only_one_up
 
-def load_model(model_name, task_name, parameters = [], new = False):
+def load_model(model_alias, task_name, parameters = [], new = False):
     """
     Loads a model with custom parameters or default ones if nothing is passed.
-    The variable model_name can be vanilla, alpha or low_rank.
+    The variable model_alias can be vanilla, alpha or low_rank.
     """
     
-    if model_name == "vanilla":
+    if model_alias == "vanilla":
         if not parameters:
             parameters = model_parameters.vanilla_parameters
         task = load_task(task_name, parameters)
         model = models.RNN_vanilla(task.n_inputs, parameters["hidden_size"],
                                  task.n_outputs)
         
-    elif model_name == "alpha":
+    elif model_alias == "alpha":
         if not parameters:
             parameters = model_parameters.alpha_parameters      
         task = load_task(task_name, parameters)
@@ -63,7 +63,7 @@ def load_model(model_name, task_name, parameters = [], new = False):
                                  task.n_outputs, task.alpha,
                                  parameters["diag"], parameters["sigma_rec"])
         
-    elif model_name == "low_rank":
+    elif model_alias == "low_rank":
         if not parameters:
             parameters = model_parameters.low_rank_parameters
         task = load_task(task_name, parameters)
@@ -76,7 +76,8 @@ def load_model(model_name, task_name, parameters = [], new = False):
     
     if not new:
         os.chdir("saved_models/")
-        model.load_state_dict(torch.load(parameters["model_name"]))
+        model.load_state_dict(torch.load(parameters["model_name"], 
+                                         weights_only=False))
         os.chdir("..")        
         
     return model, task, parameters

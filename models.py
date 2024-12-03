@@ -4,6 +4,13 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
+def Assymetric_tanh(x, a = torch.tensor(10), b = torch.tensor(1.47),
+                    k = torch.tensor(0.03)):
+    "Assymetric tanh with a default saturation of 100"
+    return a * (torch.tanh(k * x - b) + torch.tanh(b)) / (1 - torch.tanh(b)**2)
+
+def double_softplus(x, h = torch.tensor([300])):
+  return F.softplus(-F.softplus(-x + h) + h)
 
 class RNN_vanilla(nn.Module):
     """
@@ -127,7 +134,7 @@ class RNN_Alpha(nn.Module):
     Alpha arquitechture as used in Discroll et al., 2024.
     """
     def __init__(self, n_inputs, hidden_size, n_outputs,
-                 alpha, diag, sigma_rec):
+                 alpha, diag, sigma_rec, S = F.softplus):
         super(RNN_Alpha, self).__init__()
         self.device = "cpu"
         self.hidden_size = hidden_size
@@ -142,6 +149,7 @@ class RNN_Alpha(nn.Module):
         self.W_in = nn.Parameter(torch.randn(hidden_size, n_inputs) /
                                  np.sqrt(n_inputs))
         self.b = nn.Parameter(torch.zeros(hidden_size))
+        self.S = S
 
         # Output
         self.W_out = nn.Parameter(torch.normal(0., 1/np.sqrt(hidden_size),
@@ -189,7 +197,7 @@ class RNN_Alpha(nn.Module):
                       torch.randn_like(hidden) \
                       .reshape(1, self.hidden_size).to(self.device)
 
-          I = F.softplus(rec_term + input_term + self.b + noise)
+          I = self.S(rec_term + input_term + self.b + noise)
           hidden = (1 - self.alpha) * hidden + self.alpha * I
           hidden_all[0, t, :] = hidden
 
@@ -227,7 +235,7 @@ class RNN_Alpha(nn.Module):
           rec_term = torch.matmul(self.W_rec, hidden.t())\
                       .reshape(1, self.hidden_size).to(self.device)
 
-          I = F.softplus(rec_term + input_term + self.b)
+          I = self.S(rec_term + input_term + self.b)
           hidden = (1 - self.alpha) * hidden + self.alpha * I
 
         return hidden
